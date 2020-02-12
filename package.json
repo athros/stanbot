@@ -6,7 +6,7 @@
     "build": "rimraf ./dist && tsc",
     "start": "ts-node src/stanbot.ts",
     "start:dist": "npm run build && forever start dist/stanbot.js",
-    "test": "jest"
+    "test": "ts-node node_modules/jasmine/bin/jasmine"
   },
   "repository": {
     "type": "git",
@@ -21,6 +21,7 @@
   "devDependencies": {
     "@types/node": "^10.3.0",
     "forever": "^1.0.0",
+    "jasmine": "^3.5.0",
     "rimraf": "^2.6.3",
     "ts-node": "^8.3.0",
     "typescript": "^3.5.2"

@@ -11,7 +11,8 @@
     "removeComments": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "spec/**/*"
   ],
   "exclude": [
     "src/config.dist.ts"

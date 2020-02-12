@@ -1,6 +1,6 @@
 import * as readline from 'readline';
 import { CommandClient } from 'eris';
-import { auth } from './config';
+import { auth } from './config.dist';
 import { logger } from './logger';
 import { SelfServeVoice } from './self-serve-voice';
 import { Module } from './module';

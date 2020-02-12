@@ -1,7 +1,7 @@
 import * as Discord from "eris";
 import { logger } from './logger';
 import { Module } from "./module";
-import { selfServeVoice as config } from './config';
+import { selfServeVoice as config } from './config.dist';
 
 function generateColor() {
   return Math.floor(Math.random() * 16777215);
@@ -48,61 +48,7 @@ export class SelfServeVoice implements Module {
       logger.log(`Left ${guild.name}`);
     });
 
-    const getCommandMeta = (message: Discord.Message) => {
-      if (!(message.channel instanceof Discord.GuildChannel) || !message.member) {
-        // TODO: respond to DMs in some way?
-        return false;
-      }
-
-      const guildConfig = this.activeGuilds[message.channel.guild.id];
-      if (!guildConfig) {
-        return false;
-      }
-
-      if (message.channel.id !== guildConfig.commandChannelID) {
-        // does not come from our dedicated command channel
-        return false;
-      }
-
-      return {
-        guildConfig,
-        guild: message.channel.guild,
-        author: message.member,
-      };
-    }
-
-    client.registerCommand('letsplay', async (message, args) => {
-      const commandMeta = getCommandMeta(message);
-      if (!commandMeta) {
-        return;
-      }
-
-      const newChannelName = args.join(' ');
-      if (!newChannelName) {
-        // not a valid command
-        return;
-      }
-
-      try {
-        await client.createChannel(
-          commandMeta.guild.id,
-          newChannelName,
-          2,
-          `Requested by ${commandMeta.author.username}`,
-          commandMeta.guildConfig.selfServiceCategoryID,
-        );
-        message.addReaction('✅');
-      } catch {
-        message.addReaction('🙅♀️');
-      }
-
-      // TODO: check if user is already in a voice channel and move them to the new channel???
-    }, {
-      argsRequired: true,
-      description: 'Create an on-demand voice channel',
-      fullDescription: 'Creates a voice channel that will last for 48h beyond the last time someone was in it.',
-      usage: 'Rocket League',
-    });
+    this.registerOnDemandVoiceCommand(client);
 
     const roles = client.registerCommand('roles', 'Use `help roles` to see available subcommands', {
       description: 'Manage pingable roles so you can blow the game horn and summon others to play! 📯',
@@ -110,7 +56,7 @@ export class SelfServeVoice implements Module {
     });
 
     roles.registerSubcommand('list', async (message) => {
-      const commandMeta = getCommandMeta(message);
+      const commandMeta = this.getCommandMeta(message);
       if (!commandMeta) {
         return;
       }
@@ -156,7 +102,7 @@ export class SelfServeVoice implements Module {
     });
 
     roles.registerSubcommand('join', async (message, args) => {
-      const commandMeta = getCommandMeta(message);
+      const commandMeta = this.getCommandMeta(message);
       if (!commandMeta) {
         return;
       }
@@ -188,7 +134,7 @@ export class SelfServeVoice implements Module {
     });
 
     roles.registerSubcommand('leave', (message, args) => {
-      const commandMeta = getCommandMeta(message);
+      const commandMeta = this.getCommandMeta(message);
       if (!commandMeta) {
         return;
       }
@@ -268,4 +214,61 @@ export class SelfServeVoice implements Module {
       commandChannelID,
     };
   }
-}
+
+  public getCommandMeta(message: Discord.Message) {
+    if (!(message.channel instanceof Discord.GuildChannel) || !message.member) {
+      // TODO: respond to DMs in some way?
+      return false;
+    }
+
+    const guildConfig = this.activeGuilds[message.channel.guild.id];
+    if (!guildConfig) {
+      return false;
+    }
+
+    if (message.channel.id !== guildConfig.commandChannelID) {
+      // does not come from our dedicated command channel
+      return false;
+    }
+
+    return {
+      guildConfig,
+      guild: message.channel.guild,
+      author: message.member,
+    };
+  }
+
+  public registerOnDemandVoiceCommand(client: Discord.CommandClient) {
+    client.registerCommand('letsplay', async (message, args) => {
+      const commandMeta = this.getCommandMeta(message);
+      if (!commandMeta) {
+        return;
+      }
+
+      const newChannelName = args.join(' ');
+      if (!newChannelName) {
+        // not a valid command
+        return;
+      }
+
+      try {
+        await client.createChannel(
+          commandMeta.guild.id,
+          newChannelName,
+          2,
+          `Requested by ${commandMeta.author.username}`,
+          commandMeta.guildConfig.selfServiceCategoryID,
+        );
+        message.addReaction('✅');
+      } catch {
+        message.addReaction('🙅♀️');
+      }
+
+      // TODO: check if user is already in a voice channel and move them to the new channel???
+    }, {
+      argsRequired: true,
+      description: 'Create an on-demand voice channel',
+      fullDescription: 'Creates a voice channel that will last for 48h beyond the last time someone was in it.',
+      usage: 'Rocket League',
+    });
+  }}
